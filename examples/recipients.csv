@@ -1,0 +1,6 @@
+name,email
+Alex,alex@example.com
+Jamie,jamie@example.com
+Sam,sam@example.com
+Duplicate,ALEX@example.com
+Invalid,not-an-email

@@ -1,0 +1,51 @@
+{
+  "name": "reachinbox-scheduler",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n api,worker,web \"npm run dev -w @reachinbox/api\" \"npm run worker:dev -w @reachinbox/api\" \"npm run dev -w @reachinbox/web\"",
+    "build": "npm run prisma:generate && npm run build --workspaces --if-present",
+    "start": "npm run start -w @reachinbox/api",
+    "worker": "npm run worker -w @reachinbox/api",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.mts",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate deploy",
+    "prisma:studio": "prisma studio",
+    "infra:up": "docker compose up -d --wait",
+    "infra:down": "docker compose down"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
+    "@types/node": "^22.15.0",
+    "@types/supertest": "^6.0.3",
+    "concurrently": "^10.0.5",
+    "eslint": "^9.39.0",
+    "jsdom": "^29.1.1",
+    "prettier": "^3.9.9",
+    "prisma": "^6.19.0",
+    "supertest": "^7.1.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.46.0",
+    "vite": "^8.3.3",
+    "vitest": "^5.0.3"
+  },
+  "overrides": {
+    "deepmerge-ts": "^8.0.2",
+    "shell-quote": "^1.12.0"
+  }
+}

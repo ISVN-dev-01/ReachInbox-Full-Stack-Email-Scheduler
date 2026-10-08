@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+enum EmailStatus {
+  SCHEDULED
+  PROCESSING
+  SENT
+  FAILED
+}
+enum OutboxKind {
+  SEND
+  INDEX
+  ALERT
+}
+model User {
+  id String @id @default(uuid()) @db.Uuid
+  googleId String @unique
+  name String
+  email String @unique
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  senders Sender[]
+  campaigns EmailCampaign[]
+  emails Email[]
+  slack SlackIntegration?
+}
+model Sender {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name String
+  email String
+  etherealUser String?
+  etherealPassword String?
+  maxEmailsPerHour Int
+  minDelayMs Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  campaigns EmailCampaign[]
+  emails Email[]
+  @@unique([userId, email])
+}
+model EmailCampaign {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  senderId String @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sender Sender @relation(fields: [senderId], references: [id])
+  subject String
+  body String
+  startTime DateTime
+  delayBetweenEmails Int
+  hourlyLimit Int
+  totalRecipients Int
+  requestKey String
+  requestHash String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  emails Email[]
+  @@unique([userId, requestKey])
+  @@index([userId, createdAt])
+}
+model Email {
+  id String @id @default(uuid()) @db.Uuid
+  campaignId String @db.Uuid
+  userId String @db.Uuid
+  senderId String @db.Uuid
+  campaign EmailCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sender Sender @relation(fields: [senderId], references: [id])
+  recipient String
+  subject String
+  body String
+  sequenceNumber Int
+  scheduledAt DateTime
+  nextAttemptAt DateTime
+  sentAt DateTime?
+  status EmailStatus @default(SCHEDULED)
+  errorMessage String?
+  bullJobId String @unique
+  messageId String?
+  previewUrl String?
+  claimToken String?
+  revision Int @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([campaignId, sequenceNumber])
+  @@index([userId, status, scheduledAt])
+  @@index([userId, sentAt])
+  @@index([senderId, status, nextAttemptAt])
+  @@index([status, scheduledAt])
+  @@index([recipient])
+}
+model SlackIntegration {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @unique @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId String
+  workspaceName String
+  accessToken String
+  channelId String
+  channelName String
+  connectedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model Outbox {
+  id BigInt @id @default(autoincrement())
+  kind OutboxKind
+  entityId String
+  payload Json @default("{}")
+  createdAt DateTime @default(now())
+  @@index([createdAt])
+}
